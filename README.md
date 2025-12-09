@@ -4,6 +4,7 @@ Official repository for the paper [MICo-150K: A Comprehensive Dataset for Multi-
 
 ## 📢 News
 
+* **Dec 10, 2025:** 📖 We released multi-image composition [training](https://github.com/A113N-W3I/MICo-150K/blob/main/TRAIN.md) & [inference](https://github.com/A113N-W3I/MICo-150K/blob/main/INFER.md) guideline for community models. Our finetuned checkpoints coming soon, stay tuned! 👀
 * **Dec 9, 2025:** 🔥 Our paper on [arXiv](https://arxiv.org/abs/2512.07348).
 * **Dec 2, 2025:** We released the official [project page](https://mico-150k.github.io/) for MICo-150K.
 
@@ -21,6 +22,7 @@ Official repository for the paper [MICo-150K: A Comprehensive Dataset for Multi-
 - [ ] MICo-150K dataset pt.2 (carefully post-refined subset)
 - [ ] Finetuned checkpoints
 - [ ] MICo-Bench
+- [X] Training and inference guidelines
 - [X] [Technical Report](https://arxiv.org/abs/2512.07348)
 
 ## Train
