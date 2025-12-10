@@ -9,7 +9,7 @@ Here we give some demo inference codes in dir `infer/`. To inference, you need t
         --image_paths demo/input_1.png demo/input_2.png \
         --prompt "The versatile and compact bike with different designs from image 1 is parked neatly against a wall illuminated by a sleek brushed nickel wall light from image 2. The soft glow highlights the bike’s varied features, creating a stylish juxtaposition in a contemporary urban setting." \
         --output_path output_bagel.png \
-        --ft_ema_ckpt /path/to/ft/ema.safetensors \
+        --model_path /path/to/ft/ckpt \
         --seed 42 \
         --cuda_visible_devices 0
     ~~~

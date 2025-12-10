@@ -36,8 +36,8 @@ def parse_args():
     parser.add_argument("--image_paths", nargs="+", required=True)
     parser.add_argument("--prompt", type=str, required=True)
     parser.add_argument("--output_path", type=str, required=True)
-    parser.add_argument("--model_path", type=str, default="/home/notebook/data/group/ckr/ckpt/bagel")
-    parser.add_argument("--ft_ema_ckpt", type=str, default=None)
+    parser.add_argument("--model_path", type=str, required=True)
+    # parser.add_argument("--ft_ema_ckpt", type=str, default=None)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--cuda_visible_devices", type=str, default="0")
     return parser.parse_args()
@@ -126,15 +126,9 @@ def main():
     for k in same_device_modules:
         device_map[k] = first_device
 
-    ckpt_path = (
-        args.ft_ema_ckpt
-        if args.ft_ema_ckpt is not None
-        else os.path.join(args.model_path, "ema.safetensors")
-    )
-
     model = load_checkpoint_and_dispatch(
         model,
-        checkpoint=ckpt_path,
+        checkpoint=os.path.join(args.model_path, "ema.safetensors"),
         device_map=device_map,
         offload_buffers=True,
         dtype=torch.bfloat16,
