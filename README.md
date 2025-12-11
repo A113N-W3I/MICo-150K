@@ -47,14 +47,11 @@ See [INFER.md](https://github.com/A113N-W3I/MICo-150K/blob/main/INFER.md) for de
 ## 🌟 Citation
 
 ~~~
-@misc{wei2025mico150kcomprehensivedatasetadvancing,
-      title={MICo-150K: A Comprehensive Dataset Advancing Multi-Image Composition}, 
-      author={Xinyu Wei and Kangrui Cen and Hongyang Wei and Zhen Guo and Bairui Li and Zeqing Wang and Jinrui Zhang and Lei Zhang},
-      year={2025},
-      eprint={2512.07348},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2512.07348}, 
+@article{wei2025mico,
+  title={MICo-150K: A Comprehensive Dataset Advancing Multi-Image Composition},
+  author={Wei, Xinyu and Cen, Kangrui and Wei, Hongyang and Guo, Zhen and Li, Bairui and Wang, Zeqing and Zhang, Jinrui and Zhang, Lei},
+  journal={arXiv preprint arXiv:2512.07348},
+  year={2025}
 }
 ~~~
 
