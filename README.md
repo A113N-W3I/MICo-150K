@@ -4,7 +4,8 @@ Official repository for the paper [MICo-150K: A Comprehensive Dataset for Multi-
 
 ## 📢 News
 
-* **Dec 10, 2025:** 🚀 We released finetuned checkpoint [BAGEL-MICo](https://huggingface.co/kr-cen/BAGEL-MICo), [BLIP3o-Next-MICo](https://huggingface.co/kr-cen/BLIP3o-Next-MICo), [Lumina-DiMOO-MICo](https://huggingface.co/kr-cen/Lumina-DiMOO-MICo), and [OmniGen2-MICo](https://huggingface.co/kr-cen/OmniGen2-MICo), with impressive multi-image composition capability. <u>Our **MICo-150K dataset** coming soon, stay tuned! 👀</u>
+* **Dec 16, 2025:** 🔥 We released official [gradio demo](https://huggingface.co/spaces/kr-cen/Qwen-Image-MICo) for Qwen-Image-MICo, try it out!
+* **Dec 10, 2025:** 🚀 We released finetuned checkpoints [BAGEL-MICo](https://huggingface.co/kr-cen/BAGEL-MICo), [BLIP3o-Next-MICo](https://huggingface.co/kr-cen/BLIP3o-Next-MICo), [Lumina-DiMOO-MICo](https://huggingface.co/kr-cen/Lumina-DiMOO-MICo), and [OmniGen2-MICo](https://huggingface.co/kr-cen/OmniGen2-MICo), with impressive multi-image composition capability. <u>Our **MICo-150K dataset** coming soon, stay tuned! 👀</u>
 * **Dec 10, 2025:** 📖 We released multi-image composition [training](https://github.com/A113N-W3I/MICo-150K/blob/main/TRAIN.md) & [inference](https://github.com/A113N-W3I/MICo-150K/blob/main/INFER.md) guideline for community models. ~~Our finetuned checkpoints coming soon, stay tuned! 👀~~
 * **Dec 9, 2025:** 🔥 Our paper on [arXiv](https://arxiv.org/abs/2512.07348).
 * **Dec 2, 2025:** 🎬 We released the official [project page](https://mico-150k.github.io/) for MICo-150K.
