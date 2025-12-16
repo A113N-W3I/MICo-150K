@@ -21,20 +21,21 @@ Official repository for the paper [MICo-150K: A Comprehensive Dataset for Multi-
 ## 📑 Open-Source Plan
 
 - [ ] MICo-150K dataset
-- [X] Finetuned checkpoints
 - [ ] MICo-Bench
-- [X] Training and inference guidelines
+- [X] [Finetuned Checkpoints](https://huggingface.co/collections/kr-cen/mico-series)
+- [X] [Training](https://github.com/A113N-W3I/MICo-150K/blob/main/TRAIN.md) and [Inference](https://github.com/A113N-W3I/MICo-150K/blob/main/INFER.md) Guidelines
+- [X] [Gradio Demo](https://huggingface.co/spaces/kr-cen/Qwen-Image-MICo)
 - [X] [Technical Report](https://arxiv.org/abs/2512.07348)
 
 ## 🧱 Download Finetuned Models
 
-| Models       | Download Link   |
-|------------|-----------------|
-| BAGEL-MICo      | 🤗 [Huggingface](https://huggingface.co/kr-cen/BAGEL-MICo)    |
-| BLIP3o-Next-MICo | 🤗 [Huggingface](https://huggingface.co/kr-cen/BLIP3o-Next-MICo)    | 
-| Lumina-DiMOO-MICo | 🤗 [Huggingface](https://huggingface.co/kr-cen/Lumina-DiMOO-MICo)     |
-| OmniGen2-MICo     | 🤗 [Huggingface](https://huggingface.co/kr-cen/OmniGen2-MICo) |   
-| Qwen-Image-MICo     | 🤗 Coming Soon |   
+| Models       | Download Link   | Demo |
+|------------|-----------------|----------|
+| BAGEL-MICo      | 🤗 [Huggingface](https://huggingface.co/kr-cen/BAGEL-MICo)    | ---------- |
+| BLIP3o-Next-MICo | 🤗 [Huggingface](https://huggingface.co/kr-cen/BLIP3o-Next-MICo)    | ---------- |
+| Lumina-DiMOO-MICo | 🤗 [Huggingface](https://huggingface.co/kr-cen/Lumina-DiMOO-MICo)     | ---------- |
+| OmniGen2-MICo     | 🤗 [Huggingface](https://huggingface.co/kr-cen/OmniGen2-MICo) | ---------- |
+| Qwen-Image-MICo     | 🤗 Coming Soon | 🎮 [Demo](https://huggingface.co/spaces/kr-cen/Qwen-Image-MICo)  |
 
 
 ## Train
