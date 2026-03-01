@@ -23,7 +23,7 @@ Official repository for the paper [MICo-150K: A Comprehensive Dataset for Multi-
 
 ## 📑 Open-Source Plan
 
-- [x] MICo-150K dataset
+- [x] [MICo-150K dataset](https://huggingface.co/datasets/kr-cen/MICo-150K)
 - [ ] MICo-Bench
 - [X] [Finetuned Checkpoints](https://huggingface.co/collections/kr-cen/mico-series)
 - [X] [Training](https://github.com/A113N-W3I/MICo-150K/blob/main/TRAIN.md) and [Inference](https://github.com/A113N-W3I/MICo-150K/blob/main/INFER.md) Guidelines
