@@ -1,4 +1,30 @@
-## 📖 Inference
+## 🔥 Inference with Qwen-Image-Edit
+
+You can first download the full model on huggingface:
+~~~shell
+brew install git-xet
+git xet install
+git clone https://huggingface.co/kr-cen/Qwen-Image-MICo
+~~~
+
+or directly run the script and set `model_name = "kr-cen/Qwen-Image-MICo"` to download the model checkpoint.
+
+Make sure you can load QwenImageEditPipeline from `modeling_qwen_image.py` correctly:
+~~~python
+from modeling_qwen_image import QwenImageEditPipeline
+~~~
+
+To inference: 
+~~~
+python infer_qwenimage.py \
+    --image_paths /PATH/TO/IMAGE_1 /PATH/TO/IMAGE_2 /PATH/TO/IMAGE_3 \
+    --prompt "..." \
+    --true_cfg_scale 4.0 \
+    --seed 42 \
+    --output_path /PATH/TO/OUTPUT_IMAGE.png
+~~~
+
+## 📖 Inference with other community models
 
 Here we give some demo inference codes in dir `infer/`. To inference, you need to first **clone the official repo** and put the inference code into the root directory of its repo.
 
@@ -53,4 +79,3 @@ Here we give some demo inference codes in dir `infer/`. To inference, you need t
     --transformer_path "/path/to/ft/transformer" \
     --output_image_path output_omnigen.png
     ~~~
-
