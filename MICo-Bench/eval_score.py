@@ -7,7 +7,7 @@ Computes Weighted-Ref-VIEScore for a model's outputs on MICo-Bench.
 Three stages:
   1. PQ  (Perceptual Quality)  — GPT-4o scores the generated image alone.
   2. SC  (Semantic Consistency) — GPT-4o compares generated vs. reference image.
-  3. Final aggregation          — W × sqrt(SC × PQ), where W comes from a
+  3. Final aggregation          — W × SC × PQ, where W comes from a
                                   pre-computed weight file.
 
 Usage:
@@ -242,7 +242,7 @@ def evaluate_task(
 
         # ── Final ──
         if "pq" in entry and "sc" in entry:
-            entry["final"] = entry["weight"] * math.sqrt(entry["sc"] * entry["pq"])
+            entry["final"] = entry["weight"] * entry["sc"] * entry["pq"]
 
         results[case_id] = entry
 

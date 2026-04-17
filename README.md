@@ -106,7 +106,7 @@ MICo-Bench is a comprehensive benchmark for evaluating Multi-Image Composition, 
 
 We propose **Weighted-Ref-VIEScore** as the evaluation metric:
 
-$$\text{Score} = W \times \sqrt{\text{SC} \times \text{PQ}}$$
+$$\text{Score} = W \times \text{SC} \times \text{PQ}$$
 
 - **W**: Fraction of source images preserved (ArcFace for faces, VLM for objects/clothes/scenes)
 - **SC**: Semantic consistency scored by GPT-5.4 against a human-verified reference image

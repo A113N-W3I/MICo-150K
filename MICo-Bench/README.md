@@ -14,7 +14,7 @@ MICo-Bench is the evaluation benchmark for Multi-Image Composition (MICo). It co
 The final score for each case is computed as:
 
 \[
-\text{Score} = W \times \sqrt{\text{SC} \times \text{PQ}}
+\text{Score} = W \times \text{SC} \times \text{PQ}
 \]
 
 Where:
@@ -205,7 +205,7 @@ The script will:
 2. Load the pre-computed weight (defaults to 1.0 if no weight file is found).
 3. Call GPT-5.4 to compute PQ (generated image only).
 4. Call GPT-5.4 to compute SC (reference + generated image).
-5. Compute the final score: W × √(SC × PQ).
+5. Compute the final score: W × SC × PQ.
 6. Save per-case scores to `results/{model_name}/scores/{task_name}.json`.
 7. Save the aggregated summary to `results/{model_name}/summary.json`.
 
@@ -237,7 +237,7 @@ Per-case scores in `scores/{task_name}.json`:
     "sc_prompt_following": 9.0,
     "sc_subject_resemblance": 6.0,
     "sc": 7.35,
-    "final": 5.56
+    "final": 41.23
   },
   ...
 }
