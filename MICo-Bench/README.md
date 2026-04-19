@@ -124,17 +124,21 @@ results/{model_name}/{task_name}/{case_id}.png
 
 ### Step 1: Compute Weights
 
-For each case, compute the weight W — the fraction of source images correctly preserved in the generated output.
+For each case, compute the weight W — measuring how well the source images are preserved in the generated output.
 
 The verification method depends on the source type (determined by `human_indices`):
 
 **Human faces** (positions listed in `human_indices`):
 
-Extract face embeddings from both the source portrait and the generated image using [ArcFace](https://github.com/deepinsight/insightface). Compute cosine similarity between the best-matched face pair. A face is considered preserved if the similarity exceeds the threshold:
-- **0.50** for Person-Centric tasks
-- **0.45** for all other tasks (HOI, De&Re)
+Extract face embeddings from both the source portrait and the generated image using [ArcFace](https://github.com/deepinsight/insightface). Compute cosine similarity between the best-matched face pair. The similarity is mapped to a graded score:
 
-This yields a continuous similarity score per face, but for weight computation it is binarized: 1 if above threshold, 0 otherwise.
+| ArcFace Cosine Similarity | Score |
+|---|---|
+| [0.45, 1.0) | 1.0 |
+| [0.30, 0.45) | 0.7 |
+| [0.15, 0.30) | 0.5 |
+| [0.05, 0.15) | 0.2 |
+| < 0.05 | 0.0 |
 
 **Non-face inputs** (objects, clothing, scenes — all positions NOT in `human_indices`):
 
@@ -154,10 +158,10 @@ Each "yes" counts as 1, each "no" counts as 0.
 **Computing W:**
 
 ```
-W = (number of preserved sources) / (total number of source images)
+W = (sum of all element scores) / (total number of source images)
 ```
 
-For example, if a case has 4 source images (1 face + 3 objects), the face passes the ArcFace threshold, 2 objects are confirmed by the VLM, and 1 object is not found, then W = 3/4 = 0.75.
+For example, if a case has 5 source images (1 face + 2 objects + 2 clothes), the face gets ArcFace similarity 0.35 (→ score 0.7), both objects are confirmed by the VLM (→ 1 each), one clothing item is confirmed (→ 1), and the other is not found (→ 0), then W = (0.7 + 1 + 1 + 1 + 0) / 5 = 0.74.
 
 **Save format:**
 

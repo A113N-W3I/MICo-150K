@@ -108,7 +108,7 @@ We propose **Weighted-Ref-VIEScore** as the evaluation metric:
 
 $$\text{Score} = W \times \text{SC} \times \text{PQ}$$
 
-- **W**: Fraction of source images preserved (ArcFace for faces, VLM for objects/clothes/scenes)
+- **W**: Preservation score averaged over all source elements (graded ArcFace similarity for faces, binary VLM check for objects/clothes/scenes)
 - **SC**: Semantic consistency scored by GPT-5.4 against a human-verified reference image
 - **PQ**: Perceptual quality scored by GPT-5.4 on the generated image alone
 
