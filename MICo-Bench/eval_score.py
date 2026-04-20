@@ -3,21 +3,6 @@
 MICo-Bench Evaluation Script
 =============================
 Computes Weighted-Ref-VIEScore for a model's outputs on MICo-Bench.
-
-Three stages:
-  1. PQ  (Perceptual Quality)  — GPT-4o scores the generated image alone.
-  2. SC  (Semantic Consistency) — GPT-4o compares generated vs. reference image.
-  3. Final aggregation          — W × SC × PQ, where W comes from a
-                                  pre-computed weight file.
-
-Usage:
-  python eval_score.py \
-      --model_name  qwen_mico \
-      --task        all \
-      --api_key     sk-xxx \
-      --base_url    https://api.openai.com/v1
-
-See README.md for the expected directory layout.
 """
 
 import os
@@ -26,11 +11,11 @@ import json
 import math
 import base64
 import argparse
-from glob import glob
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from tqdm import tqdm
 from openai import OpenAI
-
-# ───────────────────── Prompt Templates ─────────────────────
 
 PQ_PROMPT = """\
 RULES:
@@ -88,8 +73,6 @@ where 'score1' evaluates the prompt and 'score2' evaluates the resemblance.
 Text Prompt:
 {prompt}"""
 
-# ───────────────────── Task Definitions ─────────────────────
-
 TASKS = [
     "mico_bench_object_centric",
     "mico_bench_human_centric",
@@ -98,8 +81,7 @@ TASKS = [
 ]
 
 BENCH_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# ───────────────────── Helpers ─────────────────────
+DEFAULT_IMAGE_ROOT = os.path.join(BENCH_DIR, "data", "MICo-Bench")
 
 
 def encode_image(path: str) -> str:
@@ -107,17 +89,13 @@ def encode_image(path: str) -> str:
         return base64.b64encode(f.read()).decode()
 
 
-def call_gpt4o(client: OpenAI, image_paths: list[str], prompt: str,
-               model: str = "gpt-5.4", temperature: float = 0.0) -> str:
+def call_gpt(client: OpenAI, image_paths: list[str], prompt: str, model: str, temperature: float = 0.0) -> str:
     content = [{"type": "text", "text": prompt}]
     for p in image_paths:
         b64 = encode_image(p)
         ext = os.path.splitext(p)[1].lower().lstrip(".")
         mime = "png" if ext == "png" else "jpeg"
-        content.append({
-            "type": "image_url",
-            "image_url": {"url": f"data:image/{mime};base64,{b64}"},
-        })
+        content.append({"type": "image_url", "image_url": {"url": f"data:image/{mime};base64,{b64}"}})
     resp = client.chat.completions.create(
         model=model,
         temperature=temperature,
@@ -127,7 +105,6 @@ def call_gpt4o(client: OpenAI, image_paths: list[str], prompt: str,
 
 
 def parse_scores(text: str) -> list[float] | None:
-    """Extract the first list of numbers from GPT's reply."""
     m = re.search(r"\[\s*([\d.]+)\s*,\s*([\d.]+)\s*\]", text)
     if m:
         return [float(m.group(1)), float(m.group(2))]
@@ -150,15 +127,68 @@ def find_generated_image(gen_dir: str, case_id: str) -> str | None:
     return None
 
 
-# ───────────────────── Core Evaluation ─────────────────────
+def _evaluate_one_case(
+    rec: dict,
+    gen_path: str,
+    image_root: str,
+    weights: dict,
+    gpt_model: str,
+    api_key: str,
+    base_url: str,
+    existing_entry: dict | None,
+) -> tuple[str, dict]:
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    case_id = get_case_id(rec)
+    ref_path = os.path.join(image_root, rec["reference"])
+    prompt = get_prompt(rec)
+    W = float(weights.get(case_id, 1.0))
+
+    entry = dict(existing_entry) if existing_entry else {}
+    entry["weight"] = W
+
+    if "pq" not in entry:
+        try:
+            pq_reply = call_gpt(client, [gen_path], PQ_PROMPT, model=gpt_model)
+            pq_scores = parse_scores(pq_reply)
+            if pq_scores:
+                naturalness, artifacts = pq_scores
+                entry["pq_naturalness"] = naturalness
+                entry["pq_artifacts"] = artifacts
+                entry["pq"] = math.sqrt(naturalness * artifacts)
+            else:
+                entry["pq_raw"] = pq_reply
+        except Exception as e:
+            entry["pq_error"] = str(e)
+
+    if "sc" not in entry:
+        try:
+            sc_reply = call_gpt(client, [ref_path, gen_path], SC_PROMPT.format(prompt=prompt), model=gpt_model)
+            sc_scores = parse_scores(sc_reply)
+            if sc_scores:
+                pf, sr = sc_scores
+                entry["sc_prompt_following"] = pf
+                entry["sc_subject_resemblance"] = sr
+                entry["sc"] = math.sqrt(pf * sr)
+            else:
+                entry["sc_raw"] = sc_reply
+        except Exception as e:
+            entry["sc_error"] = str(e)
+
+    if "pq" in entry and "sc" in entry:
+        entry["final"] = entry["weight"] * entry["sc"] * entry["pq"]
+    return case_id, entry
 
 
 def evaluate_task(
     task_name: str,
     model_name: str,
-    client: OpenAI,
     gpt_model: str,
     results_dir: str,
+    image_root: str,
+    api_key: str,
+    base_url: str,
+    num_threads: int,
+    weight_all_one: bool = False,
 ):
     jsonl_path = os.path.join(BENCH_DIR, f"{task_name}.jsonl")
     gen_dir = os.path.join(results_dir, model_name, task_name)
@@ -171,7 +201,9 @@ def evaluate_task(
         records = [json.loads(l) for l in f if l.strip()]
 
     weights = {}
-    if os.path.exists(weight_path):
+    if weight_all_one:
+        print("  --weight_all_one: using W=1.0 for all cases")
+    elif os.path.exists(weight_path):
         with open(weight_path) as f:
             weights = json.load(f)
         print(f"  Loaded weights from {weight_path}")
@@ -184,164 +216,164 @@ def evaluate_task(
             existing_scores = json.load(f)
 
     results = dict(existing_scores)
-
     skipped = 0
     missing = 0
+    work = []
 
-    for rec in tqdm(records, desc=f"  {task_name}"):
+    for rec in records:
         case_id = get_case_id(rec)
-
         if case_id in results and "pq" in results[case_id] and "sc" in results[case_id]:
             skipped += 1
             continue
-
         gen_path = find_generated_image(gen_dir, case_id)
         if gen_path is None:
             missing += 1
             continue
-
-        ref_path = os.path.join(BENCH_DIR, rec["reference"])
-        prompt = get_prompt(rec)
-        W = float(weights.get(case_id, 1.0))
-
-        entry = results.get(case_id, {"weight": W})
-        entry["weight"] = W
-
-        # ── PQ ──
-        if "pq" not in entry:
-            try:
-                pq_reply = call_gpt4o(client, [gen_path], PQ_PROMPT, model=gpt_model)
-                pq_scores = parse_scores(pq_reply)
-                if pq_scores:
-                    naturalness, artifacts = pq_scores
-                    entry["pq_naturalness"] = naturalness
-                    entry["pq_artifacts"] = artifacts
-                    entry["pq"] = math.sqrt(naturalness * artifacts)
-                else:
-                    entry["pq_raw"] = pq_reply
-                    print(f"    WARNING: Failed to parse PQ for case {case_id}: {pq_reply[:80]}")
-            except Exception as e:
-                print(f"    ERROR: PQ call failed for case {case_id}: {e}")
-
-        # ── SC ──
-        if "sc" not in entry:
-            sc_prompt = SC_PROMPT.format(prompt=prompt)
-            try:
-                sc_reply = call_gpt4o(client, [ref_path, gen_path], sc_prompt, model=gpt_model)
-                sc_scores = parse_scores(sc_reply)
-                if sc_scores:
-                    pf, sr = sc_scores
-                    entry["sc_prompt_following"] = pf
-                    entry["sc_subject_resemblance"] = sr
-                    entry["sc"] = math.sqrt(pf * sr)
-                else:
-                    entry["sc_raw"] = sc_reply
-                    print(f"    WARNING: Failed to parse SC for case {case_id}: {sc_reply[:80]}")
-            except Exception as e:
-                print(f"    ERROR: SC call failed for case {case_id}: {e}")
-
-        # ── Final ──
-        if "pq" in entry and "sc" in entry:
-            entry["final"] = entry["weight"] * entry["sc"] * entry["pq"]
-
-        results[case_id] = entry
-
-        # Incremental save
-        with open(score_path, "w") as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
+        work.append((rec, gen_path, image_root, weights, gpt_model, api_key, base_url, results.get(case_id)))
 
     if skipped:
         print(f"  Skipped {skipped} cases with existing scores")
     if missing:
         print(f"  Missing {missing} generated images")
+    if not work:
+        return results
 
+    print(f"  Running {len(work)} cases with {num_threads} threads ...")
+    save_lock = threading.Lock()
+
+    with ThreadPoolExecutor(max_workers=num_threads) as ex:
+        futures = [ex.submit(_evaluate_one_case, *witem) for witem in work]
+        for fut in tqdm(as_completed(futures), total=len(futures), desc=f"  {task_name}"):
+            case_id, entry = fut.result()
+            with save_lock:
+                results[case_id] = entry
+                with open(score_path, "w") as f:
+                    json.dump(results, f, indent=2, ensure_ascii=False)
     return results
-
-
-# ───────────────────── Aggregation ─────────────────────
 
 
 def aggregate_results(results_dir: str, model_name: str):
     score_dir = os.path.join(results_dir, model_name, "scores")
     all_finals = {}
     overall = []
-
     for task in TASKS:
         score_path = os.path.join(score_dir, f"{task}.json")
         if not os.path.exists(score_path):
             continue
         with open(score_path) as f:
             scores = json.load(f)
-
         finals = [v["final"] for v in scores.values() if "final" in v]
         if not finals:
             continue
-
         avg = sum(finals) / len(finals)
         all_finals[task] = {"mean": round(avg, 2), "count": len(finals)}
         overall.extend(finals)
-
     if overall:
-        all_finals["overall"] = {
-            "mean": round(sum(overall) / len(overall), 2),
-            "count": len(overall),
-        }
-
+        all_finals["overall"] = {"mean": round(sum(overall) / len(overall), 2), "count": len(overall)}
     summary_path = os.path.join(results_dir, model_name, "summary.json")
     with open(summary_path, "w") as f:
         json.dump(all_finals, f, indent=2)
-
     return all_finals
 
 
-# ───────────────────── Main ─────────────────────
+def reapply_weights_task(task_name: str, model_name: str, results_dir: str, weight_all_one: bool = False) -> None:
+    weight_path = os.path.join(results_dir, model_name, "weights", f"{task_name}.json")
+    score_path = os.path.join(results_dir, model_name, "scores", f"{task_name}.json")
+    if not os.path.exists(score_path):
+        print(f"  No score file at {score_path}, skip")
+        return
+
+    weights = {}
+    if weight_all_one:
+        print("  --weight_all_one: using W=1.0 for all cases")
+    elif os.path.exists(weight_path):
+        with open(weight_path) as f:
+            weights = json.load(f)
+        print(f"  Loaded weights from {weight_path} ({len(weights)} entries)")
+    else:
+        print(f"  WARNING: Weight file not found at {weight_path}, W=1.0 for all cases")
+
+    with open(score_path) as f:
+        scores = json.load(f)
+
+    n_ok = 0
+    n_skip = 0
+    for case_id, entry in scores.items():
+        if "pq" not in entry or "sc" not in entry:
+            n_skip += 1
+            continue
+        w = 1.0 if weight_all_one else float(weights.get(case_id, weights.get(str(case_id), 1.0)))
+        entry["weight"] = w
+        entry["final"] = w * entry["sc"] * entry["pq"]
+        n_ok += 1
+
+    with open(score_path, "w") as f:
+        json.dump(scores, f, indent=2, ensure_ascii=False)
+    print(f"  Recomputed final for {n_ok} cases" + (f" ({n_skip} skipped)" if n_skip else "") + f" -> {score_path}")
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="MICo-Bench: Compute Weighted-Ref-VIEScore",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--model_name", type=str, required=True,
-                        help="Name of the model (used as directory name under results/)")
-    parser.add_argument("--task", type=str, default="all",
-                        choices=TASKS + ["all"],
-                        help="Which task to evaluate (default: all)")
-    parser.add_argument("--results_dir", type=str,
-                        default=os.path.join(BENCH_DIR, "results"),
-                        help="Root directory for model results (default: MICo-Bench/results/)")
-    parser.add_argument("--api_key", type=str, required=True,
-                        help="OpenAI API key")
-    parser.add_argument("--base_url", type=str, default="https://api.openai.com/v1",
-                        help="OpenAI-compatible API base URL")
-    parser.add_argument("--gpt_model", type=str, default="gpt-5.4",
-                        help="GPT model name for evaluation (default: gpt-5.4)")
+    parser = argparse.ArgumentParser(description="MICo-Bench: Compute Weighted-Ref-VIEScore")
+    parser.add_argument("--model_name", type=str, required=True)
+    parser.add_argument("--task", type=str, default="all", choices=TASKS + ["all"])
+    parser.add_argument("--results_dir", type=str, default=os.path.join(BENCH_DIR, "results"))
+    parser.add_argument("--image_root", type=str, default=DEFAULT_IMAGE_ROOT)
+    parser.add_argument("--reaggregate_only", action="store_true", help="No GPT call; only reapply weights to existing scores")
+    parser.add_argument("--api_key", type=str, default="", help="OpenAI API key (required unless --reaggregate_only)")
+    parser.add_argument("--base_url", type=str, default="https://api.openai.com/v1", help="OpenAI-compatible API base URL")
+    parser.add_argument("--gpt_model", type=str, default="gpt-5.4", help="GPT model name for evaluation")
+    parser.add_argument("--num_threads", type=int, default=32, help="Parallel threads for GPT API calls")
+    parser.add_argument("--weight_all_one", action="store_true", help="Use W=1.0 for every case")
     args = parser.parse_args()
 
-    client = OpenAI(api_key=args.api_key, base_url=args.base_url)
+    if not args.reaggregate_only and not args.api_key:
+        parser.error("--api_key is required unless --reaggregate_only")
+
     tasks = TASKS if args.task == "all" else [args.task]
 
-    print(f"Model:      {args.model_name}")
-    print(f"Tasks:      {tasks}")
-    print(f"Results:    {args.results_dir}")
-    print(f"GPT Model:  {args.gpt_model}")
+    if args.reaggregate_only:
+        print(f"Model:        {args.model_name}")
+        print(f"Tasks:        {tasks}")
+        print(f"Results:      {args.results_dir}")
+        print("Mode:         reaggregate_only (no GPT)")
+        print()
+        for task in tasks:
+            print(f"Reapplying weights {task} ...")
+            reapply_weights_task(task, args.model_name, args.results_dir, args.weight_all_one)
+            print()
+        print("Aggregating results ...")
+        summary = aggregate_results(args.results_dir, args.model_name)
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+        return
+
+    print(f"Model:        {args.model_name}")
+    print(f"Tasks:        {tasks}")
+    print(f"Results:      {args.results_dir}")
+    print(f"Image root:   {args.image_root}")
+    print(f"GPT Model:    {args.gpt_model}")
+    print(f"API threads:  {args.num_threads}")
+    if args.weight_all_one:
+        print("Weights:      W=1.0 for all (--weight_all_one)")
     print()
 
     for task in tasks:
         print(f"Evaluating {task} ...")
-        evaluate_task(task, args.model_name, client, args.gpt_model, args.results_dir)
+        evaluate_task(
+            task,
+            args.model_name,
+            args.gpt_model,
+            args.results_dir,
+            args.image_root,
+            args.api_key,
+            args.base_url,
+            args.num_threads,
+            args.weight_all_one,
+        )
         print()
 
     print("Aggregating results ...")
     summary = aggregate_results(args.results_dir, args.model_name)
-    print()
-    print("=" * 50)
-    print(f"  Results for: {args.model_name}")
-    print("=" * 50)
-    for task, stats in summary.items():
-        label = task.replace("mico_bench_", "").replace("_", " ").title()
-        print(f"  {label:<25s}  {stats['mean']:>6.2f}  ({stats['count']} cases)")
-    print("=" * 50)
+    print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

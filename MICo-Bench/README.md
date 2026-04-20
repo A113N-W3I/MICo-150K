@@ -124,6 +124,19 @@ results/{model_name}/{task_name}/{case_id}.png
 
 ### Step 1: Compute Weights
 
+Run the evaluation scripts:
+~~~
+python compute_weights.py \
+  --model_name your_model \
+  --task all \
+  --vlm_model_path Qwen/Qwen3-VL-30B-A3B-Instruct \
+  --image_root ./MICo-Bench \
+  --num_workers 8 \
+  --worker_gpus 0,1,2,3,4,5,6,7
+~~~
+
+In this script, we use Arcface `buffalo_l` and `Qwen/Qwen3-VL-30B-A3B-Instruct`, it is acceptable if you are using other VLMs such as Qwen2.5-VL-72B.
+
 For each case, compute the weight W — measuring how well the source images are preserved in the generated output.
 
 The verification method depends on the source type (determined by `human_indices`):
@@ -187,10 +200,13 @@ Run the evaluation script:
 
 ```bash
 python eval_score.py \
-    --model_name  your_model \
-    --task        all \
-    --api_key     sk-xxx \
-    --base_url    https://api.openai.com/v1
+  --model_name    your_model \
+  --task          all \
+  --api_key       "$OPENAI_API_KEY" \
+  --base_url      https://api.openai.com/v1 \
+  --gpt_model     gpt-5.4 \
+  --image_root    ./MICo-Bench \
+  --num_threads   32
 ```
 
 Arguments:
@@ -203,6 +219,7 @@ Arguments:
 | `--base_url` | `https://api.openai.com/v1` | API base URL (supports OpenAI-compatible endpoints) |
 | `--gpt_model` | `gpt-5.4` | GPT model to use as evaluator |
 | `--results_dir` | `MICo-Bench/results/` | Root results directory |
+| `--image_root`  | (required)  | Path to your local [MICo-Bench](https://huggingface.co/datasets/A113NW3I/MICo-Bench) directory|
 
 The script will:
 1. Read each case from the JSONL.
