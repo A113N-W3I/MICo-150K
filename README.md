@@ -120,16 +120,18 @@ Please see our [project page](https://mico-150k.github.io/#leaderboard) for bett
 
 | Model |Object Centric | Human Centric | HOI  | De&Re | Overall |
 | ------|--------------- | ------------- | ---- | ----- | ------- |
+| [Gemini-3-Pro-Image-Preview](https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image-preview) | 50.59 | 54.75 | 50.21 | 52.13 |51.76|
 | [Gemini-3.1-Flash-Image-Preview](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image-preview) | 52.20 | 52.02 | 52.50 | 50.34 |51.66|
 | [GPT-Image-1.5](https://developers.openai.com/api/docs/models/gpt-image-1.5) | 56.66 | 46.16 | 52.35 | 48.46 |50.60|
+| [Gemini-2.5-Flash-Image](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-image) | 48.01 | 41.79 | 49.64 | 49.44 | 47.83 |
 | [Qwen-Image-MICo](https://huggingface.co/kr-cen/Qwen-Image-MICo) | 52.38 | 21.11 | 34.95 | 37.42 |35.86|
 | [Bagel-MICo](https://huggingface.co/kr-cen/BAGEL-MICo) | 38.98 | 28.45 | 25.30 | 44.51 |34.41|
 | [OmniGen2-MICo](https://huggingface.co/kr-cen/OmniGen2-MICo) | 46.26 | 22.85 | 32.18 | 36.82 |33.82|
 | [OmniGen2](https://huggingface.co/OmniGen2/OmniGen2) | 44.24 | 21.96 | 27.44 | 36.35 |31.42|
+| [Qwen-Image-2509](https://huggingface.co/Qwen/Qwen-Image-Edit-2509) | 39.77 | 20.23 | 19.95 | 29.92 |27.47|
 | [BLIP3o-Next-MICo](https://huggingface.co/kr-cen/Lumina-DiMOO-MICo) | 40.31 | 11.41 | 24.97 | 26.23 |25.21|
 | [Qwen-Image-Edit](https://huggingface.co/Qwen/Qwen-Image-Edit) | 39.42 | 17.86 | 19.96 | 27.11 |24.94|
 | [Lumina-Dimoo-MICo](https://huggingface.co/kr-cen/Lumina-DiMOO-MICo) | 38.44 | 12.14 | 24.66 | 21.32 |23.32|
-| [Qwen-Image-2509](https://huggingface.co/Qwen/Qwen-Image-Edit-2509) | 37.25 | 20.23 | 17.17 | 12.62 |19.33|
 
 
 
